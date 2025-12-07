@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MINA - Monitoramento de Equipamentos Móveis</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-dark: #0a1929;
+            --secondary-dark: #1a2b3c;
+            --accent-blue: #0066cc;
+            --accent-cyan: #00d4ff;
+            --status-parado: #ff4757;
+            --status-liberado: #2ed573;
+            --status-standby: #ffa502;
+            --status-material: #ff9f43;
+            --status-reforma: #9c88ff;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --border-tech: #2a3b4c;
+            --table-header: #1c2b3a;
+            --table-row: #253447;
+            --table-row-alt: #1e2c3a;
+            --shadow-tech: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Roboto', 'Ubuntu', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, #0c1a2a 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* Cabeçalho */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--border-tech);
+        }
+        
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .logo {
+            height: 70px;
+            filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.3));
+        }
+        
+        .title-section h1 {
+            font-size: 24px;
+            font-weight: 600;
+            background: linear-gradient(to right, var(--accent-cyan), var(--accent-blue));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: 1px;
+        }
+        
+        .title-section .subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 5px;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Cards de status */
+        .status-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .status-card {
+            background: var(--secondary-dark);
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid var(--accent-blue);
+            box-shadow: var(--shadow-tech);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .status-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        .status-card .card-title {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-card .card-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        /* Formulário */
+        .form-container {
+            background: var(--secondary-dark);
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 40px;
+            box-shadow: var(--shadow-tech);
+            border: 1px solid var(--border-tech);
+        }
+        
+        .form-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-tech);
+        }
+        
+        .form-header i {
+            color: var(--accent-cyan);
+            font-size: 22px;
+            margin-right: 12px;
+        }
+        
+        .form-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .form-group label i {
+            color: var(--accent-cyan);
+            font-size: 14px;
+        }
+        
+        .form-group input, 
+        .form-group select {
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-tech);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus, 
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2);
+        }
+        
+        .form-group input::placeholder {
+            color: #6a7b8c;
+        }
+        
+        .form-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(to right, var(--accent-blue), #0052a3);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(to right, #0052a3, var(--accent-blue));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 102, 204, 0.3);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+            border: 1px solid var(--border-tech);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: var(--accent-cyan);
+        }
+        
+        /* Tabela */
+        .table-container {
+            background: var(--secondary-dark);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--shadow-tech);
+            border: 1px solid var(--border-tech);
+            margin-bottom: 40px;
+        }
+        
+        .table-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid var(--border-tech);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .table-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .table-header h2 i {
+            color: var(--accent-cyan);
+        }
+        
+        .table-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead {
+            background: var(--table-header);
+        }
+        
+        th {
+            padding: 16px 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--border-tech);
+        }
+        
+        tbody tr {
+            background: var(--table-row);
+            border-bottom: 1px solid var(--border-tech);
+            transition: background 0.3s;
+        }
+        
+        tbody tr:nth-child(even) {
+            background: var(--table-row-alt);
+        }
+        
+        tbody tr:hover {
+            background: rgba(0, 212, 255, 0.05);
+        }
+        
+        td {
+            padding: 15px;
+            font-size: 14px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .status-parado { background: rgba(255, 71, 87, 0.15); color: var(--status-parado); border: 1px solid rgba(255, 71, 87, 0.3); }
+        .status-liberado { background: rgba(46, 213, 115, 0.15); color: var(--status-liberado); border: 1px solid rgba(46, 213, 115, 0.3); }
+        .status-standby { background: rgba(255, 165, 2, 0.15); color: var(--status-standby); border: 1px solid rgba(255, 165, 2, 0.3); }
+        .status-aguardandoMaterial { background: rgba(255, 159, 67, 0.15); color: var(--status-material); border: 1px solid rgba(255, 159, 67, 0.3); }
+        .status-EquipamentoEmReforma { background: rgba(156, 136, 255, 0.15); color: var(--status-reforma); border: 1px solid rgba(156, 136, 255, 0.3); }
+        
+        .actions-cell {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-tech);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-icon:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-edit:hover {
+            background: rgba(0, 212, 255, 0.1);
+            color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+        }
+        
+        .btn-delete:hover {
+            background: rgba(255, 71, 87, 0.1);
+            color: var(--status-parado);
+            border-color: var(--status-parado);
+        }
+        
+        /* Rodapé */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            border-top: 1px solid var(--border-tech);
+            margin-top: 30px;
+        }
+        
+        .footer .version {
+            font-family: 'Courier New', monospace;
+            color: var(--accent-cyan);
+            letter-spacing: 1px;
+        }
+        
+        /* Responsividade */
+        @media (max-width: 1024px) {
+            .form-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 20px;
+            }
+            
+            .status-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .table-container {
+                overflow-x: auto;
+            }
+            
+            table {
+                min-width: 900px;
+            }
+            
+            .form-buttons {
+                justify-content: stretch;
+            }
+            
+            .btn {
+                flex: 1;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .status-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .table-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Cabeçalho -->
+        <header class="header">
+            <div class="logo-section">
+                <img src="stratos.png" alt="Logomarca Stratos" class="logo">
+                <div class="title-section">
+                    <h1>MINA - MONITORAMENTO DE EQUIPAMENTOS MÓVEIS</h1>
+                    <div class="subtitle">Sistema de controle de status e manutenção - Painel de operações</div>
+                </div>
+            </div>
+            <div class="current-time" id="currentTime"></div>
+        </header>
+        
+        <!-- Cards de status -->
+        <div class="status-cards">
+            <div class="status-card">
+                <div class="card-title"><i class="fas fa-hashtag"></i> Total de Equipamentos</div>
+                <div class="card-value" id="totalEquipamentos">0</div>
+            </div>
+            <div class="status-card">
+                <div class="card-title"><i class="fas fa-check-circle"></i> Liberados</div>
+                <div class="card-value" id="totalLiberados">0</div>
+            </div>
+            <div class="status-card">
+                <div class="card-title"><i class="fas fa-pause-circle"></i> Parados</div>
+                <div class="card-value" id="totalParados">0</div>
+            </div>
+            <div class="status-card">
+                <div class="card-title"><i class="fas fa-clock"></i> Em Espera</div>
+                <div class="card-value" id="totalEmEspera">0</div>
+            </div>
+        </div>
+        
+        <!-- Formulário de registro -->
+        <div class="form-container">
+            <div class="form-header">
+                <i class="fas fa-clipboard-list"></i>
+                <h2>PAINEL DE REGISTROS - INSERIR/EDITAR EQUIPAMENTO</h2>
+            </div>
+            
+            <form id="equipamentoForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="nomeEquip"><i class="fas fa-tag"></i> TAG DO EQUIPAMENTO</label>
+                        <input type="text" id="nomeEquip" placeholder="Ex: 14CR10" required />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="statusEquip"><i class="fas fa-traffic-light"></i> STATUS</label>
+                        <select id="statusEquip" required>
+                            <option value="" disabled selected>Selecione o status</option>
+                            <option value="parado">Parado</option>
+                            <option value="liberado">Liberado</option>
+                            <option value="standby">Standby</option>
+                            <option value="aguardandoMaterial">Aguardando Material</option>
+                            <option value="EquipamentoEmReforma">Equipamento em Reforma</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="causaParada"><i class="fas fa-exclamation-triangle"></i> EQUIPAMENTO / CAUSA</label>
+                        <input type="text" id="causaParada" placeholder="Equipamento e a causa (se aplicável)" />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="descricaoEquip"><i class="fas fa-align-left"></i> DESCRIÇÃO</label>
+                        <input type="text" id="descricaoEquip" placeholder="Descrição adicional do equipamento" />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="horaInicio"><i class="fas fa-clock"></i> HORÁRIO INÍCIO</label>
+                        <input type="time" id="horaInicio" />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="horaFim"><i class="fas fa-clock"></i> HORÁRIO FIM</label>
+                        <input type="time" id="horaFim" />
+                    </div>
+                </div>
+                
+                <div class="form-buttons">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> SALVAR REGISTRO
+                    </button>
+                    <button type="button" id="limparBtn" class="btn btn-secondary">
+                        <i class="fas fa-eraser"></i> LIMPAR CAMPOS
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Tabela de registros -->
+        <div class="table-container">
+            <div class="table-header">
+                <h2><i class="fas fa-table"></i> REGISTROS DE EQUIPAMENTOS MÓVEIS</h2>
+                <div class="table-actions">
+                    <button id="exportJsonBtn" class="btn btn-secondary">
+                        <i class="fas fa-file-export"></i> EXPORTAR JSON
+                    </button>
+                </div>
+            </div>
+            
+            <table id="relatorioEquip">
+                <thead>
+                    <tr>
+                        <th>EQUIPAMENTO</th>
+                        <th>STATUS</th>
+                        <th>CAUSA DA PARADA</th>
+                        <th>DESCRIÇÃO</th>
+                        <th>HORÁRIO INÍCIO</th>
+                        <th>HORÁRIO FIM</th>
+                        <th>DATA/HORA CADASTRO</th>
+                        <th>AÇÕES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Equipamentos cadastrados aparecem aqui -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Rodapé -->
+        <footer class="footer">
+            <div>Sistema de Monitoramento MINA • Controle de Equipamentos Móveis</div>
+            <div class="version">v2.1.4 • Última atualização: <span id="lastUpdate"></span></div>
+        </footer>
+    </div>
+
+    <script>
+        // Elementos do DOM
+        const form = document.getElementById('equipamentoForm');
+        const nomeInput = document.getElementById('nomeEquip');
+        const statusSelect = document.getElementById('statusEquip');
+        const causaInput = document.getElementById('causaParada');
+        const descricaoInput = document.getElementById('descricaoEquip');
+        const horaInicioInput = document.getElementById('horaInicio');
+        const horaFimInput = document.getElementById('horaFim');
+        const tabelaCorpo = document.querySelector('#relatorioEquip tbody');
+        const limparBtn = document.getElementById('limparBtn');
+        const exportJsonBtn = document.getElementById('exportJsonBtn');
+        const currentTimeElement = document.getElementById('currentTime');
+        const lastUpdateElement = document.getElementById('lastUpdate');
+        
+        // Elementos dos cards de status
+        const totalEquipamentosElement = document.getElementById('totalEquipamentos');
+        const totalLiberadosElement = document.getElementById('totalLiberados');
+        const totalParadosElement = document.getElementById('totalParados');
+        const totalEmEsperaElement = document.getElementById('totalEmEspera');
+        
+        // Configurações
+        const STORAGE_KEY = 'Status_Mina_Data';
+        let equipamentos = [];
+        let editandoIndex = null;
+        let nextId = 1;
+        
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            carregarDados();
+            atualizarRelogio();
+            setInterval(atualizarRelogio, 1000);
+            atualizarDataAtualizacao();
+        });
+        
+        // Atualizar relógio
+        function atualizarRelogio() {
+            const agora = new Date();
+            const dataFormatada = new Intl.DateTimeFormat('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            }).format(agora);
+            
+            const horaFormatada = new Intl.DateTimeFormat('pt-BR', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            }).format(agora);
+            
+            currentTimeElement.textContent = `${dataFormatada} | ${horaFormatada}`;
+        }
+        
+        // Atualizar data da última atualização
+        function atualizarDataAtualizacao() {
+            const agora = new Date();
+            const dataFormatada = new Intl.DateTimeFormat('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }).format(agora);
+            
+            lastUpdateElement.textContent = dataFormatada;
+        }
+        
+        // Limpar formulário
+        limparBtn.addEventListener('click', () => {
+            form.reset();
+            editandoIndex = null;
+            nomeInput.focus();
+            // Alterar o texto do botão de submit
+            document.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-save"></i> SALVAR REGISTRO';
+        });
+        
+        // Carregar dados do localStorage
+        function carregarDados() {
+            const dadosSalvos = localStorage.getItem(STORAGE_KEY);
+            if (dadosSalvos) {
+                equipamentos = JSON.parse(dadosSalvos);
+                nextId = equipamentos.length > 0 ? Math.max(...equipamentos.map(e => e.id)) + 1 : 1;
+            }
+            renderTabela();
+            atualizarCardsStatus();
+        }
+        
+        // Salvar dados no localStorage
+        function salvarDados() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(equipamentos));
+            atualizarCardsStatus();
+            atualizarDataAtualizacao();
+        }
+        
+        // Atualizar cards de status
+        function atualizarCardsStatus() {
+            const total = equipamentos.length;
+            const liberados = equipamentos.filter(e => e.status === 'liberado').length;
+            const parados = equipamentos.filter(e => e.status === 'parado').length;
+            const emEspera = equipamentos.filter(e => 
+                e.status === 'standby' || 
+                e.status === 'aguardandoMaterial' || 
+                e.status === 'EquipamentoEmReforma'
+            ).length;
+            
+            totalEquipamentosElement.textContent = total;
+            totalLiberadosElement.textContent = liberados;
+            totalParadosElement.textContent = parados;
+            totalEmEsperaElement.textContent = emEspera;
+        }
+        
+        // Formatar data/hora
+        function formatDateTime(date) {
+            const options = { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit', 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit' 
+            };
+            return new Intl.DateTimeFormat('pt-BR', options).format(date);
+        }
+        
+        // Renderizar tabela
+        function renderTabela() {
+            tabelaCorpo.innerHTML = '';
+            
+            if (equipamentos.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td colspan="8" style="text-align: center; padding: 40px; color: #6a7b8c;">
+                        <i class="fas fa-database" style="font-size: 48px; margin-bottom: 15px; display: block;"></i>
+                        Nenhum equipamento cadastrado. Adicione um novo registro acima.
+                    </td>
+                `;
+                tabelaCorpo.appendChild(tr);
+                return;
+            }
+            
+            equipamentos.forEach((equip, idx) => {
+                const tr = document.createElement('tr');
+                
+                // Determinar a classe de status para o badge
+                let statusClass = '';
+                if (equip.status === 'parado') statusClass = 'status-parado';
+                else if (equip.status === 'liberado') statusClass = 'status-liberado';
+                else if (equip.status === 'standby') statusClass = 'status-standby';
+                else if (equip.status === 'aguardandoMaterial') statusClass = 'status-aguardandoMaterial';
+                else if (equip.status === 'EquipamentoEmReforma') statusClass = 'status-EquipamentoEmReforma';
+                
+                // Formatar o texto do status para exibição
+                let statusText = '';
+                if (equip.status === 'parado') statusText = 'PARADO';
+                else if (equip.status === 'liberado') statusText = 'LIBERADO';
+                else if (equip.status === 'standby') statusText = 'STANDBY';
+                else if (equip.status === 'aguardandoMaterial') statusText = 'AGUARD. MATERIAL';
+                else if (equip.status === 'EquipamentoEmReforma') statusText = 'EM REFORMA';
+                
+                tr.innerHTML = `
+                    <td><strong>${equip.nome}</strong></td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td>${equip.causa || '-'}</td>
+                    <td>${equip.descricao || '-'}</td>
+                    <td>${equip.horaInicio || '-'}</td>
+                    <td>${equip.horaFim || '-'}</td>
+                    <td>${equip.dataHoraCadastro || '-'}</td>
+                    <td class="actions-cell">
+                        <button class="btn-icon btn-edit" onclick="editarEquipamento(${idx})" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon btn-delete" onclick="excluirEquipamento(${idx})" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                
+                tabelaCorpo.appendChild(tr);
+            });
+        }
+        
+        // Processar envio do formulário
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const nome = nomeInput.value.trim();
+            const status = statusSelect.value;
+            const causa = causaInput.value.trim();
+            const descricao = descricaoInput.value.trim();
+            const horaInicio = horaInicioInput.value;
+            const horaFim = horaFimInput.value;
+            
+            if (!nome || !status) {
+                alert('Por favor, preencha o TAG do equipamento e selecione um status.');
+                return;
+            }
+            
+            const dataHoraCadastro = formatDateTime(new Date());
+            
+            const equipamentoObj = {
+                id: editandoIndex !== null ? equipamentos[editandoIndex].id : nextId++,
+                nome,
+                status,
+                causa,
+                descricao,
+                horaInicio,
+                horaFim,
+                dataHoraCadastro
+            };
+            
+            if (editandoIndex !== null) {
+                equipamentos[editandoIndex] = equipamentoObj;
+                editandoIndex = null;
+                document.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-save"></i> SALVAR REGISTRO';
+            } else {
+                equipamentos.push(equipamentoObj);
+            }
+            
+            renderTabela();
+            salvarDados();
+            form.reset();
+            nomeInput.focus();
+        });
+        
+        // Exportar JSON
+        exportJsonBtn.addEventListener('click', function() {
+            if (equipamentos.length === 0) {
+                alert('Não há dados para exportar.');
+                return;
+            }
+            
+            const dadosJSON = {
+                sistema: "MINA - Monitoramento de Equipamentos Móveis",
+                dataExportacao: formatDateTime(new Date()),
+                totalEquipamentos: equipamentos.length,
+                equipamentos: equipamentos
+            };
+            
+            const jsonString = JSON.stringify(dadosJSON, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mina_equipamentos_${new Date().toISOString().slice(0,10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert(`Dados exportados com sucesso! Total: ${equipamentos.length} equipamentos.`);
+        });
+        
+        // Funções globais
+        window.editarEquipamento = function(index) {
+            const equip = equipamentos[index];
+            nomeInput.value = equip.nome;
+            statusSelect.value = equip.status;
+            causaInput.value = equip.causa || '';
+            descricaoInput.value = equip.descricao || '';
+            horaInicioInput.value = equip.horaInicio || '';
+            horaFimInput.value = equip.horaFim || '';
+            editandoIndex = index;
+            
+            // Alterar o texto do botão de submit
+            document.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-edit"></i> ATUALIZAR REGISTRO';
+            nomeInput.focus();
+            
+            // Rolar para o formulário
+            document.querySelector('.form-container').scrollIntoView({ behavior: 'smooth' });
+        };
+        
+        window.excluirEquipamento = function(index) {
+            if (confirm('Tem certeza que deseja excluir este equipamento?')) {
+                equipamentos.splice(index, 1);
+                renderTabela();
+                salvarDados();
+            }
+        };
+    </script>
+</body>
+</html>
