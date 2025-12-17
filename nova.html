@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MINA - Monitoramento de Equipamentos Móveis</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
     <style>
         :root {
             --primary-dark: #0a1929;
@@ -587,10 +590,56 @@
         let equipamentos = [];
         let editandoIndex = null;
         let nextId = 1;
+        // --------- Firebase configuration (cole sua config aqui) ---------
+        const firebaseConfig = {
+            // apiKey: "SUA_API_KEY",
+            // authDomain: "seu-projeto.firebaseapp.com",
+            // projectId: "seu-projeto-id",
+            // storageBucket: "seu-projeto.appspot.com",
+            // messagingSenderId: "...",
+            // appId: "..."
+        };
+
+        let db = null;
+        let usandoFirebase = false;
+        try {
+            if (firebaseConfig && firebaseConfig.apiKey) {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                usandoFirebase = true;
+                console.log('Firebase inicializado (nova.html)');
+            }
+        } catch (err) {
+            console.warn('Erro inicializando Firebase:', err);
+            usandoFirebase = false;
+        }
         
         // Inicialização
         document.addEventListener('DOMContentLoaded', function() {
-            carregarDados();
+            if (usandoFirebase) {
+                // Listener em tempo real para os equipamentos
+                db.collection('equipamentos').onSnapshot(snapshot => {
+                    equipamentos = [];
+                    snapshot.forEach(doc => {
+                        const d = doc.data();
+                        equipamentos.push({
+                            id: d.id || doc.id,
+                            nome: d.nome,
+                            status: d.status,
+                            causa: d.causa,
+                            descricao: d.descricao,
+                            horaInicio: d.horaInicio || '',
+                            horaFim: d.horaFim || '',
+                            dataHoraCadastro: d.dataHoraCadastro || ''
+                        });
+                    });
+                    nextId = equipamentos.length > 0 ? Math.max(...equipamentos.map(e => e.id || 0)) + 1 : 1;
+                    renderTabela();
+                    atualizarCardsStatus();
+                }, err => console.error('Firestore listener error:', err));
+            } else {
+                carregarDados();
+            }
             atualizarRelogio();
             setInterval(atualizarRelogio, 1000);
             atualizarDataAtualizacao();
@@ -781,7 +830,22 @@
             }
             
             renderTabela();
-            salvarDados();
+            // Salvar no Firestore se disponível, senão no localStorage
+            if (usandoFirebase) {
+                db.collection('equipamentos').doc(equipamentoObj.nome).set({
+                    id: equipamentoObj.id,
+                    nome: equipamentoObj.nome,
+                    status: equipamentoObj.status,
+                    causa: equipamentoObj.causa,
+                    descricao: equipamentoObj.descricao,
+                    horaInicio: equipamentoObj.horaInicio,
+                    horaFim: equipamentoObj.horaFim,
+                    dataHoraCadastro: equipamentoObj.dataHoraCadastro,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }).catch(err => console.error('Erro ao salvar no Firestore:', err));
+            } else {
+                salvarDados();
+            }
             form.reset();
             nomeInput.focus();
         });
@@ -836,9 +900,14 @@
         
         window.excluirEquipamento = function(index) {
             if (confirm('Tem certeza que deseja excluir este equipamento?')) {
+                const equipamento = equipamentos[index];
                 equipamentos.splice(index, 1);
                 renderTabela();
-                salvarDados();
+                if (usandoFirebase) {
+                    db.collection('equipamentos').doc(equipamento.nome).delete().catch(err => console.error('Erro ao excluir no Firestore:', err));
+                } else {
+                    salvarDados();
+                }
             }
         };
     </script>

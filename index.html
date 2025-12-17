@@ -1,234 +1,1385 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8" />
-<title>MINA - MANUTENÇÃO OFICINA EQUIPAMENTO MOVEIS</title>
-<link rel="stylesheet" href="stile.css" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MINA - Sistema de Status de Equipamentos Móveis</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #1a1a2e;
+            color: #f0f0f0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: #16213e;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #0f3460 0%, #1a1a2e 100%);
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #e94560;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo-container img {
+            max-width: 180px;
+            height: auto;
+            filter: drop-shadow(0 0 5px rgba(233, 69, 96, 0.5));
+        }
+
+        h1 {
+            color: #fff;
+            font-size: 1.8rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .system-title {
+            font-size: 1.4rem;
+            color: #e94560;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .status-summary {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .status-item {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-item i {
+            font-size: 0.8rem;
+        }
+
+        .auth-section {
+            background-color: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .auth-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #e94560;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-section, .table-section {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .form-section h2, .table-section h2 {
+            color: #e94560;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e94560;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-section h2 i, .table-section h2 i {
+            font-size: 1.4rem;
+        }
+
+        form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            form {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        @media (max-width: 768px) {
+            .form-group.full-width {
+                grid-column: span 1;
+            }
+        }
+
+        label {
+            font-weight: 600;
+            color: #8da0c7;
+            font-size: 0.95rem;
+        }
+
+        input, select {
+            padding: 12px 15px;
+            background-color: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: #fff;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #e94560;
+            box-shadow: 0 0 0 2px rgba(233, 69, 96, 0.3);
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .time-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .button-group {
+            grid-column: span 2;
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .button-group {
+                grid-column: span 1;
+                flex-direction: column;
+            }
+        }
+
+        button {
+            padding: 14px 25px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        button[type="submit"] {
+            background-color: #e94560;
+            color: white;
+            flex: 2;
+        }
+
+        button[type="submit"]:hover:not(:disabled) {
+            background-color: #ff2e63;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4);
+        }
+
+        #limparBtn {
+            background-color: #8da0c7;
+            color: #16213e;
+            flex: 1;
+        }
+
+        #limparBtn:hover {
+            background-color: #a3b4e0;
+            transform: translateY(-2px);
+        }
+
+        .auth-btn {
+            background-color: #0f3460;
+            color: white;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+        }
+
+        .auth-btn:hover {
+            background-color: #1a4a8a;
+        }
+
+        .logout-btn {
+            background-color: rgba(255, 59, 59, 0.2);
+            color: #ff5e5e;
+            border: 1px solid rgba(255, 59, 59, 0.3);
+        }
+
+        .logout-btn:hover {
+            background-color: rgba(255, 59, 59, 0.3);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        table thead {
+            background-color: #0f3460;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        table th {
+            padding: 18px 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #fff;
+            border-bottom: 3px solid #e94560;
+        }
+
+        table tbody tr {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background-color 0.3s;
+        }
+
+        table tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        table td {
+            padding: 16px 15px;
+            vertical-align: middle;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+            min-width: 100px;
+        }
+
+        .status-parado {
+            background-color: rgba(255, 59, 59, 0.15);
+            color: #ff5e5e;
+            border: 1px solid rgba(255, 59, 59, 0.3);
+        }
+
+        .status-liberado {
+            background-color: rgba(76, 217, 100, 0.15);
+            color: #4cd964;
+            border: 1px solid rgba(76, 217, 100, 0.3);
+        }
+
+        .status-standby {
+            background-color: rgba(255, 204, 0, 0.15);
+            color: #ffcc00;
+            border: 1px solid rgba(255, 204, 0, 0.3);
+        }
+
+        .status-aguardandoMaterial {
+            background-color: rgba(255, 149, 0, 0.15);
+            color: #ff9500;
+            border: 1px solid rgba(255, 149, 0, 0.3);
+        }
+
+        .status-EquipamentoEmReforma {
+            background-color: rgba(90, 200, 250, 0.15);
+            color: #5ac8fa;
+            border: 1px solid rgba(90, 200, 250, 0.3);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn.editar {
+            background-color: #5ac8fa;
+            color: #16213e;
+        }
+
+        .btn.editar:hover {
+            background-color: #7ad4ff;
+            transform: translateY(-2px);
+        }
+
+        .btn.excluir {
+            background-color: rgba(255, 59, 59, 0.2);
+            color: #ff5e5e;
+            border: 1px solid rgba(255, 59, 59, 0.3);
+        }
+
+        .btn.excluir:hover {
+            background-color: rgba(255, 59, 59, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .empty-row {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255, 255, 255, 0.5);
+            font-style: italic;
+        }
+
+        .last-update {
+            font-size: 0.8rem;
+            color: #8da0c7;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #8da0c7;
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 30px;
+        }
+
+        /* Alertas de notificação */
+        .alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateX(100px);
+            transition: all 0.5s;
+            max-width: 350px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .alert.success {
+            background-color: #4cd964;
+        }
+
+        .alert.error {
+            background-color: #ff5e5e;
+        }
+
+        .alert.warning {
+            background-color: #ff9500;
+        }
+
+        .alert.info {
+            background-color: #5ac8fa;
+        }
+
+        /* Modal de autenticação */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1001;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: #16213e;
+            padding: 40px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 2px solid #e94560;
+        }
+
+        .modal h2 {
+            color: #e94560;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .modal-form input {
+            width: 100%;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #8da0c7;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* Indicador de conexão */
+        .connection-indicator {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            color: #8da0c7;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 100;
+        }
+
+        .connection-indicator.online i {
+            color: #4cd964;
+        }
+
+        .connection-indicator.offline i {
+            color: #ff5e5e;
+        }
+
+        /* Responsividade adicional */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .status-summary {
+                justify-content: center;
+                width: 100%;
+            }
+            
+            .main-content {
+                padding: 15px;
+            }
+            
+            .form-section, .table-section {
+                padding: 20px;
+            }
+            
+            .alert {
+                max-width: calc(100% - 40px);
+                left: 20px;
+                right: 20px;
+            }
+            
+            .auth-section {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div class="logo-container">
+                    <img src="https://via.placeholder.com/180x60/0f3460/ffffff?text=STRATOS+MINA" alt="Logomarca Stratos Mina" />
+                    <div>
+                        <h1>CONTROLE DE EQUIPAMENTOS MÓVEIS</h1>
+                        <div class="system-title">Painel de Status - Manutenção de Equipamentos</div>
+                    </div>
+                </div>
+                
+                <div class="status-summary">
+                    <div class="status-item">
+                        <i class="fas fa-truck"></i>
+                        <span id="totalEquipamentos">0 Equipamentos</span>
+                    </div>
+                    <div class="status-item">
+                        <i class="fas fa-play-circle" style="color:#4cd964"></i>
+                        <span id="liberadosCount">0 Liberados</span>
+                    </div>
+                    <div class="status-item">
+                        <i class="fas fa-pause-circle" style="color:#ff5e5e"></i>
+                        <span id="paradosCount">0 Parados</span>
+                    </div>
+                </div>
+            </div>
+        </header>
 
-<h2>STATUS -EQUIPAMENTOS MOVEIS MINA</h2>
-<form id="equipamentoForm">
-  <label for="nomeEquip">PAINEL DE REGISTROS:</label>
-  <input type="text" id="nomeEquip"placeholder="Digite o Tag do equipamento (Ex: 14CR10)" required />
-  
-  <label for="statusEquip">Status:</label>
-  <select id="statusEquip" required>
-    <option value="" disabled selected>Selecione o status</option>
-    <option value="parado">Parado</option>
-    <option value="liberado">Liberado</option>
-    <option value="standby">Standby</option>
-     <option value="aguardandoMaterial">Aguardando Material</option>
-     <option value="EquipamentoEmReforma">Equipamento em Reforma</option>
-  </select>
-  
-  <label for="causaParada">EQUIPAMENTO /CAUSA:</label>
-  <input type="text" id="causaParada" placeholder="Equipamento e a causa (se aplicável)" />
-  
-  <label for="descricaoEquip">Descrição:</label>
-  <input type="text" id="descricaoEquip" placeholder="Descrição adicional do equipamento" />
-  
-  <label for="horaInicio">Horário Início:</label>
-  <input type="time" id="horaInicio" />
-  
-  <label for="horaFim">Horário Fim:</label>
-  <input type="time" id="horaFim" />
-  
-  <button type="submit">Cadastrar</button>
-  <button type="submit" id="limparBtn">Limpar</button>
-  
-</form>
-<div style="text-align-last: left; margin-bottom: 20px;">
-  <img src="stratos.png" alt="Logomarca" style="max-width: 200px; height: auto;" />
-</div>
-<h2>STATUS EQUIPAMENTOS MOVEIS</h2>
+        <div class="auth-section" id="authSection">
+            <div id="authStatus">
+                <p>Carregando autenticação...</p>
+            </div>
+            <button id="loginBtn" class="auth-btn" style="display: none;">
+                <i class="fas fa-sign-in-alt"></i> Entrar
+            </button>
+            <div id="userInfo" style="display: none;">
+                <div class="auth-info">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <div>
+                        <strong id="userName">Usuário</strong>
+                        <div style="font-size: 0.8rem; color: #8da0c7;" id="userEmail">email@exemplo.com</div>
+                    </div>
+                </div>
+                <button id="logoutBtn" class="auth-btn logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </button>
+            </div>
+        </div>
 
-<table id="relatorioEquip">
-  <thead>
-    <tr>
-      <th>Equipamento</th>
-      <th>Status</th>
-      <th>Causa da Parada</th>
-      <th>Descrição</th>
-      <th>Horário Início</th>
-      <th>Horário Fim</th>
-      <th>Data e Hora Cadastro</th>
-      <th>Ações</th>
-    </tr>
-  </thead>
-  <tbody>
-    <!-- Equipamentos cadastrados aparecem aqui -->
-  </tbody>
-</table>
+        <div class="main-content">
+            <section class="form-section" id="formSection">
+                <h2><i class="fas fa-plus-circle"></i> Novo Registro de Equipamento</h2>
+                <form id="equipamentoForm">
+                    <div class="form-group">
+                        <label for="nomeEquip">TAG do Equipamento *</label>
+                        <input type="text" id="nomeEquip" placeholder="Ex: 14CR10" required />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="statusEquip">Status *</label>
+                        <select id="statusEquip" required>
+                            <option value="" disabled selected>Selecione o status</option>
+                            <option value="parado">Parado</option>
+                            <option value="liberado">Liberado</option>
+                            <option value="standby">Standby</option>
+                            <option value="aguardandoMaterial">Aguardando Material</option>
+                            <option value="EquipamentoEmReforma">Equipamento em Reforma</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label for="causaParada">Equipamento / Causa da Parada</label>
+                        <input type="text" id="causaParada" placeholder="Descreva o equipamento e a causa da parada (se aplicável)" />
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label for="descricaoEquip">Descrição Detalhada</label>
+                        <input type="text" id="descricaoEquip" placeholder="Forneça uma descrição adicional sobre o equipamento" />
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label>Período de Parada</label>
+                        <div class="time-inputs">
+                            <input type="time" id="horaInicio" placeholder="Horário Início" />
+                            <input type="time" id="horaFim" placeholder="Horário Fim" />
+                        </div>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button type="submit" id="submitBtn" disabled>
+                            <i class="fas fa-save"></i> <span id="submitBtnText">Cadastrar Equipamento</span>
+                        </button>
+                        <button type="button" id="limparBtn">
+                            <i class="fas fa-eraser"></i> Limpar Formulário
+                        </button>
+                    </div>
+                </form>
+            </section>
+            
+            <section class="table-section">
+                <h2><i class="fas fa-list-alt"></i> Equipamentos Cadastrados</h2>
+                <div class="last-update" id="lastUpdate">
+                    <i class="fas fa-sync"></i> <span>Última atualização: Carregando...</span>
+                </div>
+                <div class="table-container">
+                    <table id="relatorioEquip">
+                        <thead>
+                            <tr>
+                                <th>Equipamento</th>
+                                <th>Status</th>
+                                <th>Causa da Parada</th>
+                                <th>Horário Início</th>
+                                <th>Horário Fim</th>
+                                <th>Atualizado em</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaCorpo">
+                            <tr id="emptyRow">
+                                <td colspan="7" class="empty-row">
+                                    <i class="fas fa-truck-loading fa-2x" style="margin-bottom: 10px; opacity: 0.5;"></i>
+                                    <br>
+                                    Nenhum equipamento cadastrado ainda. Faça login para ver os dados.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+        
+        <footer>
+            <p>Sistema de Controle de Status de Equipamentos Móveis - Mina &copy; 2023 | Acesso Multi-dispositivo via Firebase</p>
+        </footer>
+    </div>
 
-<script>
-  const form = document.getElementById('equipamentoForm');
-  const nomeInput = document.getElementById('nomeEquip');
-  const statusSelect = document.getElementById('statusEquip');
-  const causaInput = document.getElementById('causaParada');
-  const descricaoInput = document.getElementById('descricaoEquip');
-  const horaInicioInput = document.getElementById('horaInicio');
-  const horaFimInput = document.getElementById('horaFim');
-  const tabelaCorpo = document.querySelector('#relatorioEquip tbody');
-  const limparBtn = document.getElementById('limparBtn');
+    <!-- Modal de Login/Cadastro -->
+    <div class="modal" id="authModal">
+        <div class="modal-content">
+            <button class="close-modal" id="closeModal">&times;</button>
+            <h2 id="modalTitle">Autenticação</h2>
+            <form class="modal-form" id="modalAuthForm">
+                <div id="modalMessage" style="color: #8da0c7; margin-bottom: 15px; display: none;"></div>
+                <input type="email" id="modalEmail" placeholder="E-mail" required />
+                <input type="password" id="modalPassword" placeholder="Senha" required />
+                <div class="modal-buttons">
+                    <button type="submit" id="modalSubmitBtn">
+                        <span id="modalSubmitText">Entrar</span>
+                    </button>
+                    <button type="button" id="modalToggleBtn" style="background-color: #8da0c7;">
+                        <span id="modalToggleText">Criar conta</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-  // Nome da chave para salvar no localStorage
-  const STORAGE_KEY = 'Status_Mina_Data';
-  
-  let equipamentos = [];
-  let editandoIndex = null;
-  let nextId = 1;
+    <!-- Alertas de notificação -->
+    <div class="alert" id="alertSuccess">
+        <i class="fas fa-check-circle"></i> Equipamento cadastrado com sucesso!
+    </div>
+    <div class="alert" id="alertUpdate">
+        <i class="fas fa-edit"></i> Equipamento atualizado com sucesso!
+    </div>
+    <div class="alert" id="alertDelete">
+        <i class="fas fa-trash-alt"></i> Equipamento excluído com sucesso!
+    </div>
+    <div class="alert" id="alertError">
+        <i class="fas fa-exclamation-triangle"></i> Ocorreu um erro. Tente novamente.
+    </div>
+    <div class="alert" id="alertAuth">
+        <i class="fas fa-user-check"></i> Autenticação realizada com sucesso!
+    </div>
 
-  limparBtn.addEventListener('click', () => {
-    form.reset();
-    editandoIndex = null;
-    nomeInput.focus();
-  });
+    <!-- Indicador de conexão -->
+    <div class="connection-indicator" id="connectionIndicator">
+        <i class="fas fa-wifi"></i>
+        <span id="connectionStatus">Conectando ao Firebase...</span>
+    </div>
 
-  // Carregar dados do localStorage
-  function carregarDados() {
-    const dadosSalvos = localStorage.getItem(STORAGE_KEY);
-    if (dadosSalvos) {
-      equipamentos = JSON.parse(dadosSalvos);
-      // Encontrar o próximo ID
-      nextId = equipamentos.length > 0 ? Math.max(...equipamentos.map(e => e.id)) + 1 : 1;
+   <script>
+    // Elementos do DOM
+    const form = document.getElementById('equipamentoForm');
+    const nomeInput = document.getElementById('nomeEquip');
+    const statusSelect = document.getElementById('statusEquip');
+    const causaInput = document.getElementById('causaParada');
+    const descricaoInput = document.getElementById('descricaoEquip');
+    const horaInicioInput = document.getElementById('horaInicio');
+    const horaFimInput = document.getElementById('horaFim');
+    const tabelaCorpo = document.getElementById('tabelaCorpo');
+    const limparBtn = document.getElementById('limparBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const submitBtnText = document.getElementById('submitBtnText');
+    const emptyRow = document.getElementById('emptyRow');
+    
+    // Elementos de autenticação
+    const authSection = document.getElementById('authSection');
+    const authStatus = document.getElementById('authStatus');
+    const loginBtn = document.getElementById('loginBtn');
+    const userInfo = document.getElementById('userInfo');
+    const userName = document.getElementById('userName');
+    const userEmail = document.getElementById('userEmail');
+    const userAvatar = document.getElementById('userAvatar');
+    const logoutBtn = document.getElementById('logoutBtn');
+    
+    // Elementos do modal
+    const authModal = document.getElementById('authModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalAuthForm = document.getElementById('modalAuthForm');
+    const modalEmail = document.getElementById('modalEmail');
+    const modalPassword = document.getElementById('modalPassword');
+    const modalSubmitBtn = document.getElementById('modalSubmitBtn');
+    const modalSubmitText = document.getElementById('modalSubmitText');
+    const modalToggleBtn = document.getElementById('modalToggleBtn');
+    const modalToggleText = document.getElementById('modalToggleText');
+    const modalMessage = document.getElementById('modalMessage');
+    const closeModal = document.getElementById('closeModal');
+    
+    // Elementos de contagem
+    const totalEquipamentos = document.getElementById('totalEquipamentos');
+    const liberadosCount = document.getElementById('liberadosCount');
+    const paradosCount = document.getElementById('paradosCount');
+    const lastUpdate = document.getElementById('lastUpdate');
+    const connectionIndicator = document.getElementById('connectionIndicator');
+    const connectionStatus = document.getElementById('connectionStatus');
+    
+    // Alertas
+    const alertSuccess = document.getElementById('alertSuccess');
+    const alertUpdate = document.getElementById('alertUpdate');
+    const alertDelete = document.getElementById('alertDelete');
+    const alertError = document.getElementById('alertError');
+    const alertAuth = document.getElementById('alertAuth');
+
+    // Dados da aplicação
+    let equipamentos = [];
+    let editandoId = null;
+    let isLoginMode = true;
+    let db = null;
+    let auth = null;
+    let currentUser = null;
+    let unsubscribeEquipamentos = null;
+
+    // === CONFIGURAÇÃO DO FIREBASE ===
+    // COLE AQUI SUA CONFIGURAÇÃO DO FIREBASE CONSOLE
+   // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyBbBgPRIlT8PIxbvvpzW6LpkPQfeUvepkA",
+  authDomain: "mina-equipamentos.firebaseapp.com",
+  projectId: "mina-equipamentos",
+  storageBucket: "mina-equipamentos.firebasestorage.app",
+  messagingSenderId: "212381922518",
+  appId: "1:212381922518:web:b47a6f97f4881a5462c577"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+    // Inicializar Firebase
+    function initializeFirebase() {
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            db = firebase.firestore();
+            auth = firebase.auth();
+            
+            updateConnectionStatus(true);
+            console.log('Firebase inicializado com sucesso!');
+            
+            // Configurar observador de autenticação
+            setupAuthListener();
+            
+        } catch (error) {
+            console.error('Erro ao inicializar Firebase:', error);
+            updateConnectionStatus(false);
+            showAlert(alertError, 'Erro na conexão com o servidor');
+        }
     }
-    renderTabela();
-  }
 
-  // Salvar dados no localStorage
-  function salvarDados() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(equipamentos));
-    
-    // Também cria um JSON virtual para uso
-    criarJSONVirtual();
-  }
+    // Atualizar status da conexão
+    function updateConnectionStatus(isConnected) {
+        if (isConnected) {
+            connectionIndicator.classList.add('online');
+            connectionIndicator.classList.remove('offline');
+            connectionStatus.textContent = 'Conectado ao Firebase';
+            connectionIndicator.innerHTML = '<i class="fas fa-wifi"></i> Conectado ao Firebase';
+        } else {
+            connectionIndicator.classList.add('offline');
+            connectionIndicator.classList.remove('online');
+            connectionStatus.textContent = 'Desconectado - Modo Local';
+            connectionIndicator.innerHTML = '<i class="fas fa-wifi-slash"></i> Desconectado - Modo Local';
+        }
+    }
 
-  // Criar JSON virtual
-  function criarJSONVirtual() {
-    const dadosJSON = {
-      equipamentos: equipamentos
-    };
-    
-    console.log('Dados em formato JSON:');
-    console.log(JSON.stringify(dadosJSON, null, 2));
-    
-    return dadosJSON;
-  }
+    // Configurar listener de autenticação
+    function setupAuthListener() {
+        auth.onAuthStateChanged((user) => {
+            currentUser = user;
+            
+            if (user) {
+                // Usuário está logado
+                showUserInfo(user);
+                loadEquipamentos();
+                submitBtn.disabled = false;
+            } else {
+                // Usuário não está logado
+                showLoginButton();
+                equipamentos = [];
+                renderTabela();
+                updateCounters();
+                submitBtn.disabled = true;
+            }
+        });
+    }
 
-  function formatDateTime(date) {
-    const options = { 
-      year: 'numeric', month: '2-digit', day: '2-digit', 
-      hour: '2-digit', minute: '2-digit', second: '2-digit' 
-    };
-    return new Intl.DateTimeFormat('pt-BR', options).format(date);
-  }
+    // Mostrar informações do usuário
+    function showUserInfo(user) {
+        authStatus.style.display = 'none';
+        loginBtn.style.display = 'none';
+        userInfo.style.display = 'flex';
+        
+        userName.textContent = user.displayName || user.email.split('@')[0];
+        userEmail.textContent = user.email;
+        userAvatar.textContent = user.email.charAt(0).toUpperCase();
+        
+        // Atualizar título do modal
+        modalTitle.textContent = 'Minha Conta';
+    }
 
-  function renderTabela() {
-    tabelaCorpo.innerHTML = '';
-    equipamentos.forEach((equip, idx) => {
-      const tr = document.createElement('tr');
+    // Mostrar botão de login
+    function showLoginButton() {
+        authStatus.style.display = 'none';
+        userInfo.style.display = 'none';
+        loginBtn.style.display = 'block';
+    }
 
-      const tdNome = document.createElement('td');
-      tdNome.textContent = equip.nome;
+    // Carregar equipamentos do Firestore
+    function loadEquipamentos() {
+        if (!db) return;
+        
+        // Se já houver um listener ativo, remova-o
+        if (unsubscribeEquipamentos) {
+            unsubscribeEquipamentos();
+        }
+        
+        // Criar novo listener em tempo real
+        unsubscribeEquipamentos = db.collection('equipamentos')
+            .orderBy('updatedAt', 'desc')
+            .onSnapshot((snapshot) => {
+                equipamentos = [];
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    equipamentos.push({
+                        id: doc.id,
+                        ...data
+                    });
+                });
+                
+                renderTabela();
+                updateCounters();
+                updateConnectionStatus(true);
+            }, (error) => {
+                console.error('Erro ao carregar equipamentos:', error);
+                showAlert(alertError, 'Erro ao carregar equipamentos');
+                updateConnectionStatus(false);
+            });
+    }
 
-      const tdStatus = document.createElement('td');
-      tdStatus.textContent = equip.status.charAt(0).toUpperCase() + equip.status.slice(1);
-      tdStatus.className = `status-${equip.status}`;
+    // Funções auxiliares
+    function showAlert(alertElement, message = null) {
+        if (message) {
+            const icon = alertElement.querySelector('i');
+            const text = alertElement.innerText.replace(icon?.outerHTML || '', '').trim();
+            alertElement.innerHTML = `${icon?.outerHTML || ''} ${message}`;
+        }
+        alertElement.classList.add('show');
+        setTimeout(() => {
+            alertElement.classList.remove('show');
+        }, 3000);
+    }
 
-      const tdCausa = document.createElement('td');
-      tdCausa.textContent = equip.causa || '-';
+    function updateCounters() {
+        const total = equipamentos.length;
+        const liberados = equipamentos.filter(e => e.status === 'liberado').length;
+        const parados = equipamentos.filter(e => e.status === 'parado').length;
+        
+        totalEquipamentos.textContent = `${total} Equipamento${total !== 1 ? 's' : ''}`;
+        liberadosCount.textContent = `${liberados} Liberado${liberados !== 1 ? 's' : ''}`;
+        paradosCount.textContent = `${parados} Parado${parados !== 1 ? 's' : ''}`;
+        
+        const now = new Date();
+        lastUpdate.innerHTML = `<i class="fas fa-sync"></i> <span>Última atualização: ${formatTime(now)}</span>`;
+    }
 
-      const tdDescricao = document.createElement('td');
-      tdDescricao.textContent = equip.descricao || '-';
+    function formatTime(date) {
+        return date.toLocaleTimeString('pt-BR', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    }
 
-      const tdHoraInicio = document.createElement('td');
-      tdHoraInicio.textContent = equip.horaInicio || '-';
+    function formatDateTime(date) {
+        return date.toLocaleString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
 
-      const tdHoraFim = document.createElement('td');
-      tdHoraFim.textContent = equip.horaFim || '-';
+    // Renderizar tabela
+    function renderTabela() {
+        if (equipamentos.length > 0 && emptyRow) {
+            emptyRow.style.display = 'none';
+        } else if (emptyRow) {
+            emptyRow.style.display = 'table-row';
+            if (!currentUser) {
+                emptyRow.querySelector('td').innerHTML = `
+                    <i class="fas fa-truck-loading fa-2x" style="margin-bottom: 10px; opacity: 0.5;"></i>
+                    <br>
+                    Faça login para ver e gerenciar os equipamentos.
+                `;
+            }
+        }
+        
+        tabelaCorpo.innerHTML = '';
+        
+        if (equipamentos.length === 0 && emptyRow) {
+            tabelaCorpo.appendChild(emptyRow);
+            return;
+        }
+        
+        equipamentos.forEach((equip) => {
+            const tr = document.createElement('tr');
 
-      const tdDataHora = document.createElement('td');
-      tdDataHora.textContent = equip.dataHoraCadastro || '-';
+            // TAG do equipamento
+            const tdNome = document.createElement('td');
+            tdNome.innerHTML = `<strong>${equip.nome}</strong>`;
+            if (equip.descricao) {
+                tdNome.innerHTML += `<br><small style="color: #8da0c7;">${equip.descricao}</small>`;
+            }
 
-      const tdAcoes = document.createElement('td');
-      tdAcoes.innerHTML = `
-        <button class="btn editar" onclick="editarEquipamento(${idx})">Editar</button>
-        <button class="btn excluir" onclick="excluirEquipamento(${idx})">Excluir</button>
-      `;
+            // Status com badge
+            const tdStatus = document.createElement('td');
+            let statusText = equip.status ? equip.status.charAt(0).toUpperCase() + equip.status.slice(1) : '-';
+            if (equip.status === 'EquipamentoEmReforma') {
+                statusText = 'Em Reforma';
+            } else if (equip.status === 'aguardandoMaterial') {
+                statusText = 'Aguardando Material';
+            }
+            tdStatus.innerHTML = `<span class="status-badge status-${equip.status}">${statusText}</span>`;
 
-      tr.appendChild(tdNome);
-      tr.appendChild(tdStatus);
-      tr.appendChild(tdCausa);
-      tr.appendChild(tdDescricao);
-      tr.appendChild(tdHoraInicio);
-      tr.appendChild(tdHoraFim);
-      tr.appendChild(tdDataHora);
-      tr.appendChild(tdAcoes);
+            // Causa da parada
+            const tdCausa = document.createElement('td');
+            tdCausa.textContent = equip.causa || '-';
+            if (!equip.causa || equip.causa.trim() === '') {
+                tdCausa.innerHTML = '<span style="color: #8da0c7; font-style: italic;">Não informada</span>';
+            }
 
-      tabelaCorpo.appendChild(tr);
+            // Horário início
+            const tdHoraInicio = document.createElement('td');
+            tdHoraInicio.textContent = equip.horaInicio || '-';
+
+            // Horário fim
+            const tdHoraFim = document.createElement('td');
+            tdHoraFim.textContent = equip.horaFim || '-';
+
+            // Data de atualização
+            const tdUpdatedAt = document.createElement('td');
+            const updatedDate = equip.updatedAt ? equip.updatedAt.toDate() : new Date();
+            tdUpdatedAt.textContent = formatDateTime(updatedDate);
+
+            // Ações (apenas se o usuário atual for o criador)
+            const tdAcoes = document.createElement('td');
+            if (currentUser && equip.userId === currentUser.uid) {
+                tdAcoes.innerHTML = `
+                    <div class="action-buttons">
+                        <button class="btn editar" onclick="editarEquipamento('${equip.id}')">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <button class="btn excluir" onclick="excluirEquipamento('${equip.id}')">
+                            <i class="fas fa-trash-alt"></i> Excluir
+                        </button>
+                    </div>
+                `;
+            } else {
+                tdAcoes.innerHTML = `<span style="color: #8da0c7; font-style: italic;">Somente leitura</span>`;
+            }
+
+            tr.appendChild(tdNome);
+            tr.appendChild(tdStatus);
+            tr.appendChild(tdCausa);
+            tr.appendChild(tdHoraInicio);
+            tr.appendChild(tdHoraFim);
+            tr.appendChild(tdUpdatedAt);
+            tr.appendChild(tdAcoes);
+
+            tabelaCorpo.appendChild(tr);
+        });
+    }
+
+    // Event Listeners
+    limparBtn.addEventListener('click', () => {
+        form.reset();
+        editandoId = null;
+        submitBtnText.textContent = 'Cadastrar Equipamento';
+        setDefaultTimes();
+        if (nomeInput) nomeInput.focus();
     });
-  }
 
-  form.addEventListener('submit', function(event) {
-    event.preventDefault();
+    // Login/Logout
+    loginBtn.addEventListener('click', () => {
+        isLoginMode = true;
+        modalTitle.textContent = 'Entrar na Conta';
+        modalSubmitText.textContent = 'Entrar';
+        modalToggleText.textContent = 'Criar conta';
+        modalMessage.style.display = 'none';
+        modalAuthForm.reset();
+        authModal.style.display = 'flex';
+    });
 
-    const nome = nomeInput.value.trim();
-    const status = statusSelect.value;
-    const causa = causaInput.value.trim();
-    const descricao = descricaoInput.value.trim(); // Get the description
-    const horaInicio = horaInicioInput.value;
-    const horaFim = horaFimInput.value;
+    logoutBtn.addEventListener('click', () => {
+        auth.signOut().then(() => {
+            showAlert(alertAuth, 'Logout realizado com sucesso!');
+        }).catch((error) => {
+            console.error('Erro ao fazer logout:', error);
+            showAlert(alertError, 'Erro ao fazer logout');
+        });
+    });
 
-    if (!nome || !status) return;
+    // Modal handlers
+    closeModal.addEventListener('click', () => {
+        authModal.style.display = 'none';
+    });
 
-    const dataHoraCadastro = formatDateTime(new Date());
+    modalToggleBtn.addEventListener('click', () => {
+        isLoginMode = !isLoginMode;
+        if (isLoginMode) {
+            modalTitle.textContent = 'Entrar na Conta';
+            modalSubmitText.textContent = 'Entrar';
+            modalToggleText.textContent = 'Criar conta';
+        } else {
+            modalTitle.textContent = 'Criar Nova Conta';
+            modalSubmitText.textContent = 'Cadastrar';
+            modalToggleText.textContent = 'Já tenho conta';
+        }
+        modalMessage.style.display = 'none';
+        modalAuthForm.reset();
+    });
 
-    const equipamentoObj = {
-      id: editandoIndex !== null ? equipamentos[editandoIndex].id : nextId++,
-      nome,
-      status,
-      causa,
-      descricao, // Include the description in the object
-      horaInicio,
-      horaFim,
-      dataHoraCadastro
+    // Submit do modal (login/cadastro)
+    modalAuthForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const email = modalEmail.value.trim();
+        const password = modalPassword.value.trim();
+        
+        if (!email || !password) {
+            modalMessage.textContent = 'Preencha todos os campos!';
+            modalMessage.style.color = '#ff5e5e';
+            modalMessage.style.display = 'block';
+            return;
+        }
+        
+        modalSubmitBtn.disabled = true;
+        modalSubmitBtn.innerHTML = '<div class="spinner"></div> Processando...';
+        
+        try {
+            if (isLoginMode) {
+                // Login
+                await auth.signInWithEmailAndPassword(email, password);
+                showAlert(alertAuth, 'Login realizado com sucesso!');
+            } else {
+                // Cadastro
+                await auth.createUserWithEmailAndPassword(email, password);
+                showAlert(alertAuth, 'Conta criada com sucesso!');
+            }
+            
+            authModal.style.display = 'none';
+            modalAuthForm.reset();
+            
+        } catch (error) {
+            console.error('Erro de autenticação:', error);
+            
+            let errorMessage = 'Erro na autenticação';
+            switch (error.code) {
+                case 'auth/email-already-in-use':
+                    errorMessage = 'Este e-mail já está em uso';
+                    break;
+                case 'auth/invalid-email':
+                    errorMessage = 'E-mail inválido';
+                    break;
+                case 'auth/weak-password':
+                    errorMessage = 'Senha muito fraca (mínimo 6 caracteres)';
+                    break;
+                case 'auth/user-not-found':
+                    errorMessage = 'Usuário não encontrado';
+                    break;
+                case 'auth/wrong-password':
+                    errorMessage = 'Senha incorreta';
+                    break;
+            }
+            
+            modalMessage.textContent = errorMessage;
+            modalMessage.style.color = '#ff5e5e';
+            modalMessage.style.display = 'block';
+            
+        } finally {
+            modalSubmitBtn.disabled = false;
+            modalSubmitBtn.innerHTML = isLoginMode ? 
+                '<span id="modalSubmitText">Entrar</span>' : 
+                '<span id="modalSubmitText">Cadastrar</span>';
+        }
+    });
+
+    // Submit do formulário de equipamento
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        if (!currentUser) {
+            showAlert(alertError, 'Faça login para cadastrar equipamentos');
+            return;
+        }
+        
+        const nome = nomeInput.value.trim();
+        const status = statusSelect.value;
+        const causa = causaInput.value.trim();
+        const descricao = descricaoInput.value.trim();
+        const horaInicio = horaInicioInput.value;
+        const horaFim = horaFimInput.value;
+        
+        if (!nome || !status) {
+            showAlert(alertError, 'Preencha o nome e status do equipamento');
+            return;
+        }
+        
+        const equipamentoData = {
+            nome,
+            status,
+            causa,
+            descricao,
+            horaInicio,
+            horaFim,
+            userId: currentUser.uid,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        // Se estiver editando, preservar o createdAt
+        if (!editandoId) {
+            equipamentoData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        }
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<div class="spinner"></div> Salvando...';
+        
+        try {
+            if (editandoId) {
+                // Atualizar equipamento existente
+                await db.collection('equipamentos').doc(editandoId).update(equipamentoData);
+                showAlert(alertUpdate);
+            } else {
+                // Criar novo equipamento
+                await db.collection('equipamentos').add(equipamentoData);
+                showAlert(alertSuccess);
+            }
+            
+            form.reset();
+            setDefaultTimes();
+            editandoId = null;
+            submitBtnText.textContent = 'Cadastrar Equipamento';
+            
+        } catch (error) {
+            console.error('Erro ao salvar equipamento:', error);
+            showAlert(alertError, 'Erro ao salvar equipamento');
+            
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-save"></i> <span id="submitBtnText">Cadastrar Equipamento</span>';
+        }
+    });
+
+    // Funções globais para editar/excluir
+    window.editarEquipamento = async (id) => {
+        try {
+            const doc = await db.collection('equipamentos').doc(id).get();
+            if (doc.exists) {
+                const equip = doc.data();
+                
+                // Verificar se o usuário pode editar
+                if (equip.userId !== currentUser.uid) {
+                    showAlert(alertError, 'Você só pode editar seus próprios equipamentos');
+                    return;
+                }
+                
+                nomeInput.value = equip.nome;
+                statusSelect.value = equip.status;
+                causaInput.value = equip.causa || '';
+                descricaoInput.value = equip.descricao || '';
+                horaInicioInput.value = equip.horaInicio || '';
+                horaFimInput.value = equip.horaFim || '';
+                editandoId = id;
+                submitBtnText.textContent = 'Atualizar Equipamento';
+                
+                // Rolar até o formulário
+                document.querySelector('.form-section').scrollIntoView({ behavior: 'smooth' });
+            }
+        } catch (error) {
+            console.error('Erro ao carregar equipamento:', error);
+            showAlert(alertError, 'Erro ao carregar equipamento');
+        }
     };
 
-    if (editandoIndex !== null) {
-      equipamentos[editandoIndex] = equipamentoObj;
-      editandoIndex = null;
-    } else {
-      equipamentos.push(equipamentoObj);
+    window.excluirEquipamento = async (id) => {
+        try {
+            // Verificar se o usuário pode excluir
+            const doc = await db.collection('equipamentos').doc(id).get();
+            if (doc.exists && doc.data().userId !== currentUser.uid) {
+                showAlert(alertError, 'Você só pode excluir seus próprios equipamentos');
+                return;
+            }
+            
+            if (confirm('Tem certeza que deseja excluir este equipamento?')) {
+                await db.collection('equipamentos').doc(id).delete();
+                showAlert(alertDelete);
+            }
+        } catch (error) {
+            console.error('Erro ao excluir equipamento:', error);
+            showAlert(alertError, 'Erro ao excluir equipamento');
+        }
+    };
+
+    // Configurar horários padrão
+    function setDefaultTimes() {
+        const now = new Date();
+        const horaAtual = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+        horaInicioInput.value = horaAtual;
+        
+        const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+        const horaFutura = oneHourLater.getHours().toString().padStart(2, '0') + ':' + oneHourLater.getMinutes().toString().padStart(2, '0');
+        horaFimInput.value = horaFutura;
     }
 
-    renderTabela();
-    salvarDados();
-    form.reset();
-  });
-
-  window.editarEquipamento = function(index) {
-    const equip = equipamentos[index];
-    nomeInput.value = equip.nome;
-    statusSelect.value = equip.status;
-    causaInput.value = equip.causa || '';
-    descricaoInput.value = equip.descricao || '';
-    horaInicioInput.value = equip.horaInicio || '';
-    horaFimInput.value = equip.horaFim || '';
-    editandoIndex = index;
-    nomeInput.focus();
-  };
-
-  window.excluirEquipamento = function(index) {
-    equipamentos.splice(index, 1);
-    renderTabela();
-    salvarDados();
-  };
-
-  // Carregar dados ao iniciar a página
-  carregarDados();
-  renderTabela();
+    // Inicializar aplicação
+    window.addEventListener('load', () => {
+        initializeFirebase();
+        setDefaultTimes();
+    });
+    
+    // Configurar listener para status
+    statusSelect.addEventListener('change', function() {
+        if (this.value === 'liberado') {
+            horaInicioInput.value = '';
+            horaFimInput.value = '';
+        } else if (!horaInicioInput.value || !horaFimInput.value) {
+            setDefaultTimes();
+        }
+    });
 </script>
-
-</body>
-</html>
